@@ -1,5 +1,7 @@
 //Include Libraries
 #include <Keyboard.h>
+#include <Mouse.h>
+#include <Encoder.h>
 
 //Switches
 #define SW_1 A0
@@ -25,14 +27,18 @@
 #define RGB_B 10
 
 //Threads
-#define THREAD1 150
+#define THREAD1 200
 #define THREAD2 50
 uint32_t thread1 = 0, thread2 = 0;
 
+//User defined class
+Encoder scroll(ENCODER_A, ENCODER_B);
+
 //User variables
-bool state = 0;
-bool press_flag = 0;
-int a = 0, b = 0, c = 0;
+int press_flag = 0, count = 0;
+int scroll_val = 1;
+int rled_val = 0, gled_val = 0, bled_val = 0;
+int32_t value = 0, new_value = 0;
 
 //User functions
 void rgb_update(int rled, int gled, int bled) {
@@ -43,6 +49,7 @@ void rgb_update(int rled, int gled, int bled) {
 
 void setup() {
   Keyboard.begin();
+  Mouse.begin();
   //Inputs
   pinMode(SW_1, INPUT_PULLUP);
   pinMode(SW_2, INPUT_PULLUP);
@@ -64,13 +71,16 @@ void setup() {
   //CC RGB LED
   rgb_update(255, 255, 255);
 
-  a = random(255);
-  b = random(255);
-  c = random(255);
+  digitalWrite(BICOLOR_R, 0);
+  digitalWrite(BICOLOR_G, 1);
+
+  rled_val = random(255);
+  gled_val = random(255);
+  bled_val = random(255);
 }
 
 void loop() {
-  if (millis() - thread1 >= THREAD1) {
+  if (millis() - thread1 >= THREAD1 && press_flag == 0) {
     thread1 = millis();
     if (digitalRead(SW_3) == 0) {
       Keyboard.press(KEY_LEFT_CTRL);
@@ -96,23 +106,48 @@ void loop() {
     } else if (digitalRead(SW_4) == 0) {
       Keyboard.press(KEY_LEFT_GUI);
       Keyboard.press(KEY_LEFT_CTRL);
-      Keyboard.press(KEY_LEFT_ARROW);
+      Keyboard.press(KEY_RIGHT_ARROW);
       press_flag = 1;
+    } else if (digitalRead(SW_SCROLL) == 0) {
+      if (scroll_val == 1) {
+        scroll_val = 8;
+        digitalWrite(BICOLOR_R, 1);
+        digitalWrite(BICOLOR_G, 0);
+      } else {
+        scroll_val = 1;
+        digitalWrite(BICOLOR_R, 0);
+        digitalWrite(BICOLOR_G, 1);
+      }
+      press_flag = 10;
     }
   }
 
   if (millis() - thread2 >= THREAD2) {
     thread2 = millis();
-    if (press_flag) {
-      press_flag = 0;
+    value = scroll.read();
+    if (value != new_value) {
+      if (value > new_value) {
+        Mouse.move(0, 0, scroll_val);
+      } else {
+        Mouse.move(0, 0, -scroll_val);
+      }
+      new_value = value;
+    }
+    if (press_flag == 1) {
+      press_flag = 10;
       Keyboard.releaseAll();
     }
-    rgb_update(a--, b--, c--);
-    if (a == 0)
-      a = 255;
-    if (b == 0)
-      b = 255;
-    if (c == 0)
-      c = 255;
+
+    if (press_flag > 0 && count++ >= 15) {
+      press_flag = 0;
+      count = 0;
+    }
+    rgb_update(rled_val--, gled_val--, bled_val--);
+    if (rled_val == 0)
+      rled_val = 255;
+    if (gled_val == 0)
+      gled_val = 255;
+    if (bled_val == 0)
+      bled_val = 255;
   }
 }
