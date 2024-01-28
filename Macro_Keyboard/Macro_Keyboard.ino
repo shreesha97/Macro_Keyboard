@@ -1,7 +1,8 @@
+//Include Libraries
 #include <Keyboard.h>
 
 //Switches
-#define SW_1 A0 
+#define SW_1 A0
 #define SW_2 A1
 #define SW_3 A2
 #define SW_4 15
@@ -14,24 +15,34 @@
 #define ENCODER_A 3
 #define ENCODER_B 2
 
-//Bi colour led
+//Bi-colour led
 #define BICOLOR_R 7
-#define BICOLOR_G 6
+#define BICOLOR_G 8
 
 //RGB Led
-#define RGB_R 8
+#define RGB_R 6
 #define RGB_G 9
 #define RGB_B 10
 
 //Threads
-#define THREAD1 1000
-#define THREAD2 200
-uint64_t thread1 = 0, thread2 = 0;
+#define THREAD1 150
+#define THREAD2 50
+uint32_t thread1 = 0, thread2 = 0;
 
 //User variables
-bool state = 0, value = 0;
+bool state = 0;
+bool press_flag = 0;
+int a = 0, b = 0, c = 0;
+
+//User functions
+void rgb_update(int rled, int gled, int bled) {
+  analogWrite(RGB_R, rled);
+  analogWrite(RGB_G, gled);
+  analogWrite(RGB_B, bled);
+}
 
 void setup() {
+  Keyboard.begin();
   //Inputs
   pinMode(SW_1, INPUT_PULLUP);
   pinMode(SW_2, INPUT_PULLUP);
@@ -50,22 +61,58 @@ void setup() {
   pinMode(RGB_G, OUTPUT);
   pinMode(RGB_R, OUTPUT);
 
-  //CC RGB LED 
-  digitalWrite(RGB_R, 1);
-  digitalWrite(RGB_G, 1);
-  digitalWrite(RGB_B, 1);
+  //CC RGB LED
+  rgb_update(255, 255, 255);
+
+  a = random(255);
+  b = random(255);
+  c = random(255);
 }
 
 void loop() {
-  if(millis() - thread1 >= THREAD1) {
+  if (millis() - thread1 >= THREAD1) {
     thread1 = millis();
-    state =!state;
-    digitalWrite(BICOLOR_G, state);
+    if (digitalRead(SW_3) == 0) {
+      Keyboard.press(KEY_LEFT_CTRL);
+      Keyboard.press('c');
+      press_flag = 1;
+    } else if (digitalRead(SW_6) == 0) {
+      Keyboard.press(KEY_LEFT_CTRL);
+      Keyboard.press('v');
+      press_flag = 1;
+    } else if (digitalRead(SW_2) == 0) {
+      Keyboard.press(KEY_LEFT_CTRL);
+      Keyboard.press('z');
+      press_flag = 1;
+    } else if (digitalRead(SW_5) == 0) {
+      Keyboard.press(KEY_LEFT_GUI);
+      Keyboard.press(KEY_TAB);
+      press_flag = 1;
+    } else if (digitalRead(SW_1) == 0) {
+      Keyboard.press(KEY_LEFT_GUI);
+      Keyboard.press(KEY_LEFT_CTRL);
+      Keyboard.press(KEY_LEFT_ARROW);
+      press_flag = 1;
+    } else if (digitalRead(SW_4) == 0) {
+      Keyboard.press(KEY_LEFT_GUI);
+      Keyboard.press(KEY_LEFT_CTRL);
+      Keyboard.press(KEY_LEFT_ARROW);
+      press_flag = 1;
+    }
   }
 
-  if(millis() - thread2 >= THREAD2) {
+  if (millis() - thread2 >= THREAD2) {
     thread2 = millis();
-    value =!value;
-    digitalWrite(RGB_G, value);
+    if (press_flag) {
+      press_flag = 0;
+      Keyboard.releaseAll();
+    }
+    rgb_update(a--, b--, c--);
+    if (a == 0)
+      a = 255;
+    if (b == 0)
+      b = 255;
+    if (c == 0)
+      c = 255;
   }
 }
