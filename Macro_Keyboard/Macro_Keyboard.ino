@@ -93,6 +93,8 @@ void setup() {
   digitalWrite(BICOLOR_R, 0);
   digitalWrite(BICOLOR_G, 1);
 
+  randomSeed(analogRead(A3));
+
   // Initialize random RGB LED intensities
   rled_val = random(255);
   gled_val = random(255);
