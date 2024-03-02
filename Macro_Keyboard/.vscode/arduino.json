@@ -1,0 +1,5 @@
+{
+    "board": "arduino:avr:micro",
+    "sketch": "Macro_Keyboard.ino",
+    "output": "build"
+}
